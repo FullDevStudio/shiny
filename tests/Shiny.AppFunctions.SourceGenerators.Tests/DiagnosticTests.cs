@@ -44,6 +44,16 @@ public class DiagnosticTests
         Assert.Contains("AddAppFunctions", generated);
     }
 
+    [Fact]
+    public void EnumWithoutDisplayNames_KeepsTheMemberNames()
+    {
+        var (diagnostics, generated) = Run($"public enum Move {{ Up, ClosedTight }} [AppFunction(\"do_it\")] public record F(Move Move) : IAppFunction<string>; {Handler}");
+        Assert.Empty(diagnostics);
+        Assert.DoesNotContain("EnumDisplayNames", generated);
+        Assert.Contains(".closedTight: \"\"Closed Tight\"\",", generated); // Swift, inside a C# verbatim string
+        Assert.Contains("(one of: Up, ClosedTight)", generated);
+    }
+
     [Theory]
     [InlineData("Title", "title")]
     [InlineData("Description", "description")]

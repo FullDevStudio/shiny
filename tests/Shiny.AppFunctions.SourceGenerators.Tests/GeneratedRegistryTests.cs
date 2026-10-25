@@ -54,6 +54,7 @@ public class GeneratedRegistryTests
         Assert.Equal(AppValueKind.Entity, create.Parameters[0].Type.Kind);
         Assert.Equal("customer", create.Parameters[0].Type.EntityId);
         Assert.Equal(["Low", "Normal", "High"], create.Parameters[2].Type.EnumValues);
+        Assert.Equal(["Low", "Standard", "Urgent"], create.Parameters[2].Type.EnumDisplayNames);
         Assert.Equal(AppValueKind.Object, create.Result.Kind);
         Assert.Equal(AppValueKind.Array, create.Result.Properties.Single(p => p.Name == "lines").Type.Kind);
 
@@ -63,6 +64,23 @@ public class GeneratedRegistryTests
 
         Assert.Equal("customer", registry.Functions[3].SearchesEntityId);
         Assert.Equal("customer", registry.Entities.Single().Id);
+    }
+
+    [Fact]
+    public void ParametersJsonSchema_NamesTheEnumDisplayNames()
+    {
+        var schema = JsonDocument.Parse(new GeneratedAppFunctionRegistry().Functions[0].GetParametersJsonSchema()).RootElement;
+        var priority = schema.GetProperty("properties").GetProperty("priority");
+
+        Assert.Equal(["Low", "Normal", "High"], priority.GetProperty("enum").EnumerateArray().Select(x => x.GetString()));
+        Assert.Equal("Priority (Normal = Standard, High = Urgent)", priority.GetProperty("description").GetString());
+    }
+
+    [Fact]
+    public async Task EnumArguments_BindByMemberName_NotByDisplayName()
+    {
+        var outcome = await Run("create_order", """{"customer":"c1","quantity":1,"priority":"Urgent"}""");
+        Assert.Equal(AppFunctionErrorCode.InvalidArgument, outcome.ErrorCode);
     }
 
     [Fact]
@@ -155,7 +173,9 @@ public class GeneratedRegistryTests
         {
             ["customer"] = "8", ["quantity"] = "7", ["priority"] = "8", ["due"] = "8", ["note"] = "8", ["rush"] = "1"
         }, parameters);
-        Assert.Equal(["Low", "Normal", "High"], create.Elements("parameters").Single(x => x.Element("name")!.Value == "priority").Descendants("enumValues").Select(x => x.Value));
+        var priority = create.Elements("parameters").Single(x => x.Element("name")!.Value == "priority");
+        Assert.Equal(["Low", "Normal", "High"], priority.Descendants("enumValues").Select(x => x.Value)); // the wire values stay the member names
+        Assert.Equal("Priority (one of: Low, Normal = Standard, High = Urgent)", priority.Element("description")!.Value);
         Assert.Equal("11", create.Element("response")!.Element("valueType")!.Element("type")!.Value);
         Assert.Equal("Sample.Orders.OrderResult", create.Element("response")!.Element("valueType")!.Element("dataTypeReference")!.Value);
 
@@ -178,6 +198,11 @@ public class GeneratedRegistryTests
         Assert.Contains("var customer: CustomerAppEntity", swift);
         Assert.Contains("var due: Date?", swift);
         Assert.Contains("enum PriorityAppEnum: String, AppEnum {", swift);
+        Assert.Contains("case high = \"High\"", swift);
+        Assert.Contains("static let typeDisplayRepresentation: TypeDisplayRepresentation = \"Order Priority\"", swift);
+        Assert.Contains(".low: \"Low\",", swift);
+        Assert.Contains(".normal: \"Standard\",", swift);
+        Assert.Contains(".high: \"Urgent\",", swift);
         Assert.Contains("struct CustomerAppEntityQuery: EntityStringQuery {", swift);
         Assert.Contains("phrases: [\"Create an order in \\(.applicationName)\", \"Start a \\(.applicationName) order\"]", swift);
         Assert.Contains("shortTitle: \"New Order\"", swift);

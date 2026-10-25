@@ -4,7 +4,16 @@ namespace Sample.Orders;
 
 // A representative app model. The real generator runs on this file when the test project builds.
 
-public enum Priority { Low, Normal, High }
+// display names: [Display(Name)] wins over [Description]; a member without either keeps its name
+[System.ComponentModel.Description("Order Priority")]
+public enum Priority
+{
+    Low,
+    [System.ComponentModel.Description("Standard")] Normal,
+    [System.ComponentModel.DataAnnotations.Display(Name = "Urgent")]
+    [System.ComponentModel.Description("ignored")]
+    High
+}
 
 [AppEntity("customer", Title = "Customer")]
 public record Customer(string Id, string Name, string City);

@@ -34,6 +34,13 @@ public sealed class AppTypeDescriptor
     public string? EntityId { get; init; }
 
     public IReadOnlyList<string> EnumValues { get; init; } = [];
+
+    /// <summary>
+    /// Parallel to <see cref="EnumValues"/>: the user-facing name of each member, from <c>[Display(Name = ...)]</c> or
+    /// <c>[Description(...)]</c> (the member name where it has neither). Empty when no member has one.
+    /// </summary>
+    public IReadOnlyList<string> EnumDisplayNames { get; init; } = [];
+
     public IReadOnlyList<AppPropertyDescriptor> Properties { get; init; } = [];
     public AppTypeDescriptor? ItemType { get; init; }
 
@@ -122,6 +129,16 @@ public sealed class AppFunctionDescriptor
                 foreach (var v in type.EnumValues)
                     writer.WriteStringValue(v);
                 writer.WriteEndArray();
+                if (type.EnumDisplayNames.Count == type.EnumValues.Count)
+                {
+                    var names = type.EnumValues
+                        .Select((v, i) => (Value: v, Name: type.EnumDisplayNames[i]))
+                        .Where(x => x.Name != x.Value)
+                        .Select(x => $"{x.Value} = {x.Name}")
+                        .ToList();
+                    if (names.Count > 0)
+                        description = $"{description} ({String.Join(", ", names)})".TrimStart();
+                }
                 break;
             case AppValueKind.Entity:
                 writer.WriteString("type", "string");

@@ -126,7 +126,8 @@ static class AndroidEmitter
         return p.Type.Kind switch
         {
             ValueKind.DateTimeOffset => $"{text} (ISO 8601 date and time)",
-            ValueKind.Enum => $"{text} (one of: {string.Join(", ", p.Type.EnumValues)})",
+            // the wire value stays the member name; a display name tells the agent which word maps to it
+            ValueKind.Enum => $"{text} (one of: {string.Join(", ", p.Type.EnumValues.Select((v, i) => p.Type.EnumDisplayNames[i] is { } name ? $"{v} = {name}" : v))})",
             ValueKind.Entity => $"{text} (the id of a {p.Type.EntityId}; find one with search_{p.Type.EntityId})",
             _ => text
         };

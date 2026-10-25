@@ -375,6 +375,7 @@ sealed class Analyzer
             var typeName = TypeName(inner);
             if (!this.enums.TryGetValue(typeName, out var e))
             {
+                var members = inner.GetMembers().OfType<IFieldSymbol>().Where(f => f.HasConstantValue).ToList();
                 e = new TypeModel
                 {
                     Kind = ValueKind.Enum,
@@ -382,7 +383,9 @@ sealed class Analyzer
                     CSharpType = inner.ToDisplayString(Fqn),
                     TypeName = typeName,
                     SimpleName = inner.Name,
-                    EnumValues = inner.GetMembers().OfType<IFieldSymbol>().Where(f => f.HasConstantValue).Select(f => f.Name).ToList()
+                    EnumValues = members.Select(f => f.Name).ToList(),
+                    EnumDisplayNames = members.Select(DisplayName).ToList(),
+                    EnumTypeDisplayName = DisplayName(inner)
                 };
                 this.enums[typeName] = e;
             }
@@ -395,7 +398,9 @@ sealed class Analyzer
                 CSharpType = nullable ? e.CSharpBaseType + "?" : e.CSharpBaseType,
                 TypeName = e.TypeName,
                 SimpleName = e.SimpleName,
-                EnumValues = e.EnumValues
+                EnumValues = e.EnumValues,
+                EnumDisplayNames = e.EnumDisplayNames,
+                EnumTypeDisplayName = e.EnumTypeDisplayName
             };
         }
         return null;
@@ -484,6 +489,30 @@ sealed class Analyzer
 
     static AttributeData? Attribute(ISymbol symbol, INamedTypeSymbol? attribute)
         => attribute == null ? null : symbol.GetAttributes().FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attribute));
+
+    /// <summary>
+    /// The user-facing name of an enum or enum member: [Display(Name = ...)] first, then [Description(...)].
+    /// Matched by name so the app needs no extra reference; read at build time, nothing is reflected at runtime.
+    /// </summary>
+    static string? DisplayName(ISymbol symbol)
+    {
+        string? description = null;
+        foreach (var attr in symbol.GetAttributes())
+        {
+            switch (attr.AttributeClass?.ToDisplayString())
+            {
+                case "System.ComponentModel.DataAnnotations.DisplayAttribute":
+                    if (Named(attr, "Name") is string name && !String.IsNullOrWhiteSpace(name))
+                        return name;
+                    break;
+                case "System.ComponentModel.DescriptionAttribute":
+                    if (attr.ConstructorArguments.FirstOrDefault().Value is string text && !String.IsNullOrWhiteSpace(text))
+                        description = text;
+                    break;
+            }
+        }
+        return description;
+    }
 
     static object? Named(AttributeData attr, string name)
         => attr.NamedArguments.FirstOrDefault(x => x.Key == name).Value.Value;

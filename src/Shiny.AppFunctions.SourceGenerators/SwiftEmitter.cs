@@ -64,10 +64,13 @@ static class SwiftEmitter
         sb.AppendLine($"enum {name}: String, AppEnum {{");
         foreach (var v in e.EnumValues)
             sb.AppendLine($"    case {Ident(Analyzer.CamelCase(v))} = {Str(v)}");
-        sb.AppendLine($"    static let typeDisplayRepresentation: TypeDisplayRepresentation = {Str(Analyzer.Words(e.SimpleName))}");
+        sb.AppendLine($"    static let typeDisplayRepresentation: TypeDisplayRepresentation = {Str(e.EnumTypeDisplayName ?? Analyzer.Words(e.SimpleName))}");
         sb.AppendLine($"    static let caseDisplayRepresentations: [{name}: DisplayRepresentation] = [");
-        foreach (var v in e.EnumValues)
-            sb.AppendLine($"        .{Ident(Analyzer.CamelCase(v))}: {Str(Analyzer.Words(v))},");
+        for (var i = 0; i < e.EnumValues.Count; i++)
+        {
+            var v = e.EnumValues[i];
+            sb.AppendLine($"        .{Ident(Analyzer.CamelCase(v))}: {Str(e.EnumDisplayNames[i] ?? Analyzer.Words(v))},");
+        }
         sb.AppendLine("    ]");
         sb.AppendLine("}");
         sb.AppendLine();

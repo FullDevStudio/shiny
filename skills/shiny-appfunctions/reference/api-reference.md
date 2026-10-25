@@ -201,6 +201,7 @@ public sealed class AppFunctionDescriptor
     public string GetParametersJsonSchema();   // JSON schema draft 2020-12
 }
 
+public sealed class AppTypeDescriptor { AppValueKind Kind; bool IsNullable; string? TypeName; string? EntityId; IReadOnlyList<string> EnumValues; IReadOnlyList<string> EnumDisplayNames; /* empty unless a member has a display name */ IReadOnlyList<AppPropertyDescriptor> Properties; AppTypeDescriptor? ItemType; }
 public sealed class AppParameterDescriptor { string Name; string Title; string? Description; AppTypeDescriptor Type; bool IsRequired; }
 public sealed class AppEntityDescriptor { string Id; string Title; string TypeName; }
 public enum AppValueKind { Void, String, Int32, Int64, Double, Boolean, DateTimeOffset, Enum, Entity, Object, Array }
@@ -222,7 +223,10 @@ Generated assets: `app_functions.xml`, `app_functions_v2.xml`, `app_functions_sc
 ## Wire format
 
 - Parameter names are the property names in **camelCase**.
-- Enums: the member name as a string (case-insensitive when binding).
+- Enums: the member name as a string (case-insensitive when binding). A `[Display(Name = ...)]` or `[Description(...)]`
+  on a member (or on the enum) only changes what the user sees: the Swift `caseDisplayRepresentations` /
+  `typeDisplayRepresentation`, the Android parameter description (`one of: Up = Open, Down = Close, Stop`) and the
+  JSON schema description. `Display` wins over `Description`; without either the member name split into words is shown.
 - `DateTimeOffset`: ISO 8601 (epoch milliseconds also accepted).
 - Numbers and booleans are also accepted as strings.
 - Entities: the entity id as a string.

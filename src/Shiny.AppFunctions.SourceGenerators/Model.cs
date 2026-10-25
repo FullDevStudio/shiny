@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shiny.AppFunctions.SourceGenerators;
 
@@ -32,6 +33,14 @@ sealed class TypeModel
     public string SimpleName = "";
     public string? EntityId;
     public List<string> EnumValues = new();
+    /// <summary>
+    /// Parallel to <see cref="EnumValues"/>: the display name from [Display(Name = ...)] or [Description(...)] on the
+    /// member, or null when it has none.
+    /// </summary>
+    public List<string?> EnumDisplayNames = new();
+    /// <summary>Display name of the enum type itself, from the same attributes; null when it has none.</summary>
+    public string? EnumTypeDisplayName;
+    public bool HasEnumDisplayNames => this.EnumDisplayNames.Any(x => x != null);
     public List<PropertyModel> Properties = new();
     public TypeModel? ItemType;
     public bool IsValueType;

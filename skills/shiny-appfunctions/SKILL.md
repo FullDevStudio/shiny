@@ -116,6 +116,11 @@ using Shiny.AppFunctions;
 
 public enum Priority { Low, Normal, Urgent }                          // → Swift AppEnum / Android enumValues
 
+// optional display names (what Siri/Shortcuts show, and what an agent is told each value means):
+// [Display(Name = ...)] or [Description(...)] on a member or on the enum; the wire value stays the member name
+[Description("Direction")]
+public enum Move { [Description("Open")] Up, [Display(Name = "Close")] Down, Stop }
+
 [AppEntity("customer", Title = "Customer")]                            // needs a public string Id
 public record Customer(string Id, string Name, string City);          // display: DisplayProperty, else Name, Title, Id
 
@@ -160,7 +165,7 @@ public record CountOpenOrders : IAppFunction<int>;
 | | Parameters | Results |
 |---|---|---|
 | `string`, `int`, `long`, `double`, `bool`, `DateTimeOffset` | ✅ (nullable = optional) | ✅ |
-| enums (wire value = member name) | ✅ | ✅ |
+| enums (wire value = member name; display name from `[Display(Name)]` / `[Description]`) | ✅ | ✅ |
 | `[AppEntity]` records | ✅ (id on the wire, resolved through `IAppEntityQuery<T>`; unknown id → `NotFound`) | as plain objects |
 | records / classes of the above | ❌ | ✅ (nested up to 4 levels) |
 | arrays / lists | ❌ | ✅ |

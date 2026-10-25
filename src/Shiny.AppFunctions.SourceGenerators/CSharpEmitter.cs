@@ -289,6 +289,8 @@ static class CSharpEmitter
             parts.Add($"EntityId = {Str(t.EntityId)}");
         if (t.EnumValues.Count > 0)
             parts.Add($"EnumValues = new string[] {{ {string.Join(", ", t.EnumValues.Select(Str))} }}");
+        if (t.HasEnumDisplayNames)
+            parts.Add($"EnumDisplayNames = new string[] {{ {string.Join(", ", t.EnumValues.Select((v, i) => Str(t.EnumDisplayNames[i] ?? v)))} }}");
         if (t.Properties.Count > 0)
             parts.Add($"Properties = new {R}AppPropertyDescriptor[] {{ {string.Join(", ", t.Properties.Select(p => $"new {R}AppPropertyDescriptor {{ Name = {Str(p.WireName)}, Type = {TypeDescriptor(p.Type)} }}"))} }}");
         if (t.ItemType != null)
